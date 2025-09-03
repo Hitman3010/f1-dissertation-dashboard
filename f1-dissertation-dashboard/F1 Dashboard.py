@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # loading datasets
-dpi_df = pd.read_csv("F1 data/dpi_dataset.csv")
-summary_df = pd.read_csv("F1 data/bayesian_driver_team_summary.csv")
+dpi_df = pd.read_csv("dpi_dataset.csv")
+summary_df = pd.read_csv("bayesian_driver_team_summary.csv")
 
 # Preprocessing
 summary_df.rename(columns={'mean': 'skill', 'hdi_3%': 'low', 'hdi_97%': 'high'}, inplace=True)
