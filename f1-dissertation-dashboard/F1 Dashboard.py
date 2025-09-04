@@ -18,7 +18,7 @@ driver_skills = summary_df[summary_df['type'] == 'driver'][['name', 'skill']].re
 team_skills = summary_df[summary_df['type'] == 'team'][['name', 'skill']].rename(
     columns={'name': 'team_name', 'skill': 'constructor_effect'})
 
-# Pairing driver with the latest constructor
+# Pairing driver with the constructor
 latest_teams = dpi_df.sort_values(['driver_name', 'year'], ascending=[True, False]) \
     .drop_duplicates('driver_name')[['driver_name', 'team_name']]
 
@@ -38,7 +38,7 @@ constructors = sorted(team_skills['team_name'].unique())
 selected_driver = st.sidebar.selectbox("Select Driver", drivers)
 selected_constructor = st.sidebar.selectbox("Select Constructor", constructors)
 
-# DPI Trend Plot
+# DPI Plot
 st.subheader(f"DPI Trend: {selected_driver}")
 driver_trend = dpi_df[dpi_df['driver_name'] == selected_driver]
 
@@ -49,7 +49,7 @@ ax1.set_xlabel("Year")
 ax1.set_ylabel("DPI")
 st.pyplot(fig1)
 
-# Bayesian Skill Table - Driver
+# Bayesian Skill Table (Driver)
 st.subheader(f"Bayesian Skill Estimate: {selected_driver}")
 driver_post = summary_df[(summary_df['type'] == 'driver') & (summary_df['name'] == selected_driver)]
 if not driver_post.empty:
@@ -57,7 +57,7 @@ if not driver_post.empty:
 else:
     st.warning("No Bayesian skill estimate found for this driver.")
 
-# Bayesian Skill Table - Team
+# Bayesian Skill Table (Team)
 st.subheader(f"Constructor Estimate: {selected_constructor}")
 team_post = summary_df[(summary_df['type'] == 'team') & (summary_df['name'] == selected_constructor)]
 if not team_post.empty:
@@ -69,7 +69,7 @@ else:
 st.subheader("Driver Skill vs Constructor Effect")
 fig2, ax2 = plt.subplots(figsize=(10, 6))
 sns.scatterplot(data=skill_vs_car, x='constructor_effect', y='driver_skill', alpha=0.4, ax=ax2)
-# Highlight selected driver
+
 highlight = skill_vs_car[skill_vs_car['driver_name'] == selected_driver]
 if not highlight.empty:
     ax2.scatter(highlight['constructor_effect'], highlight['driver_skill'], color='red', s=100, label='Selected Driver')
@@ -101,7 +101,6 @@ if not driver_row.empty and not team_row.empty:
     simulated_score = driver_row['driver_skill'].values[0] + team_row['constructor_effect'].values[0]
     st.success(f"Simulated Performance Score for {sim_driver} driving for {sim_team}: **{simulated_score:.2f}**")
 
-    # Compare with actual (if available)
     actual_team_row = latest_teams[latest_teams['driver_name'] == sim_driver]
     if not actual_team_row.empty:
         actual_team_name = actual_team_row['team_name'].values[0]
@@ -114,4 +113,4 @@ if not driver_row.empty and not team_row.empty:
         comment = "That would be an upgrade!" if delta > 0 else "Not an upgrade"
         st.markdown(f"**Difference: {delta:+.2f}** — {comment}")
 else:
-    st.warning("Could not find Bayesian estimates for simulation.")
+    st.warning("Could not find Bayesian estimates for this simulation.")
