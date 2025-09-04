@@ -34,23 +34,23 @@ merged['race_name'] = merged[race_name_col] if race_name_col in merged.columns e
 
 f1_recent = merged[merged['year'] >= 2000].copy().reset_index(drop=True)
 
-# DNF inference
+# DNF adjustment
 if have_status and {'statusId', 'status'}.issubset(set(status.columns)):
     f1_recent = f1_recent.merge(status[['statusId', 'status']], on='statusId', how='left')
     st = f1_recent['status'].astype(str).str.lower()
     finished_like = st.str.contains('finished') | st.str.contains(r'^\+\d+\s*lap')
     f1_recent['dnf'] = (~finished_like).astype(int)
 else:
-    finished_ids = {1, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20}  # common Ergast "finished / +laps" ids
+    finished_ids = {1, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20} 
     f1_recent['dnf'] = (~f1_recent['statusId'].isin(finished_ids)).astype(int)
 
-# Build race metrics
+# Race metrics
 f1_recent = f1_recent.dropna(subset=['grid', 'positionOrder']).copy()
 f1_recent['positions_gained'] = f1_recent['grid'].astype(float) - f1_recent['positionOrder'].astype(float)
 f1_recent['win'] = (f1_recent['positionOrder'] == 1).astype(int)
 f1_recent['podium'] = (f1_recent['positionOrder'] <= 3).astype(int)
 
-# Driver-season aggregation
+# Driver and season grouping
 driver_season_summary = f1_recent.groupby(['driver_name', 'year']).agg(
     races_entered=('raceId', 'nunique'),
     points_total=('points', 'sum'),
@@ -62,11 +62,11 @@ driver_season_summary = f1_recent.groupby(['driver_name', 'year']).agg(
     dnfs=('dnf', 'sum')
 ).reset_index()
 
-# Teammate H2H win%
+# Teammate comparision
 race_data = f1_recent[['year', 'raceId', 'driver_name', 'team', 'positionOrder']].dropna()
 pairs = []
 for (_, grp) in race_data.groupby(['year', 'raceId', 'team']):
-    if len(grp) == 2:  # full teammate pair only
+    if len(grp) == 2:  
         gsorted = grp.sort_values('positionOrder')
         winner = gsorted.iloc[0]['driver_name']
         for d in grp['driver_name']:
@@ -122,7 +122,7 @@ dpi_df['DPI'] = sum(dpi_df[c] * w for c, w in weights.items())
 # For streamlit app
 dpi_df.to_csv(DATA_DIR + "dpi_dataset.csv", index=False)
 
-# Bayesian model
+# Bayesian modelling
 model_data = f1_recent[['raceId', 'driver_name', 'team', 'points']].dropna().copy()
 model_data['driver_id'] = model_data['driver_name'].astype('category').cat.codes
 model_data['team_id'] = model_data['team'].astype('category').cat.codes
@@ -153,7 +153,7 @@ driver_skill = (pd.DataFrame({'driver_name': driver_labels,
                               'bayes_skill': summ['mean'].to_numpy()})
                 .sort_values('bayes_skill', ascending=False))
 
-# Merge average DPI
+# Merging average DPI
 dpi_mean = dpi_df.groupby('driver_name', as_index=False)['DPI'].mean().rename(columns={'DPI': 'dpi_mean'})
 driver_skill = driver_skill.merge(dpi_mean, on='driver_name', how='left')
 driver_skill.to_csv(DATA_DIR + "bayesian_driver_rankings.csv", index=False)
